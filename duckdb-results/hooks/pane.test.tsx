@@ -42,6 +42,29 @@ test('a duckdb Bash call fills the pane with an aligned table', async ($, on) =>
   }
 })
 
+test('a drawn result tells the model not to repeat the table', async ($, on) => {
+  on('command.register', () => ({ value: { command: 'duckdb' } }))
+  on('clock.now', () => ({ value: 1_700_000_000_000 }))
+  on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('tool.call', (_, e) =>
+    e.command === 'duckdb -c "FROM t"'
+      ? { result: { stdout: STDOUT, stderr: '', interrupted: false }, context: ['engine note'] }
+      : { result: { stdout: 'not a table', stderr: '', interrupted: false } },
+  )
+
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const ran = await $.tool.call({ tool: 'Bash', command: 'duckdb -c "FROM t"' })
+  expect(ran.deny).toBe(undefined)
+  // The engine's own context stays, the mod's note comes after it.
+  expect(ran.context?.[0]).toBe('engine note')
+  expect(ran.context?.[1]).toMatch(/Do not repeat the rows/)
+
+  // No table (an error, or output that is not agent mode): nothing added.
+  const plain = await $.tool.call({ tool: 'Bash', command: 'duckdb -c "SET x"' })
+  expect(plain.context).toBe(undefined)
+})
+
 test('a Bash call that is not duckdb leaves the pane empty', async ($, on) => {
   on('command.register', () => ({ value: { command: 'duckdb' } }))
   on('clock.now', () => ({ value: 1_700_000_000_000 }))

@@ -14,7 +14,8 @@ with their type, subtype and position.
 
 - **Under the tool call.** The result block of a Bash call that ran `duckdb`
   is drawn as an aligned table (up to 15 rows). `ctrl+o` still shows the raw
-  text the model read.
+  text the model read. The model is told the table is already on screen, so
+  it refers to it instead of pasting the rows into its reply a second time.
 - **A pane.** `/duckdb` opens a pane that shows the latest result in full and
   keeps the last 20. With several results, press `1` to `9` in the focused pane
   to switch between them.

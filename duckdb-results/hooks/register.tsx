@@ -8,6 +8,15 @@ import { isDuckDBCommand, parseDuckDB, summarize } from './parse'
 const PANE = 'duckdb'
 const KEEP = 20
 const MODEL_CONTEXT_CHARS = 6000
+const INLINE_ROWS = 15
+
+// Read by the model after a duckdb result, never shown to the user: without
+// it the model copies the rows into its reply, and the person sees the table
+// twice, once drawn under the Bash call and once as markdown.
+const DRAWN_NOTE =
+  'The duckdb-results plugin has already shown this result to the user as an aligned table ' +
+  `under the Bash call (the first ${INLINE_ROWS} rows of each table; /duckdb shows them all). ` +
+  'Do not repeat the rows or the table in your reply. Refer to it, and add only what it does not show.'
 
 // Bump the shape when QueryRun's fields change: it declines what an earlier
 // version stored, which outlives a reload.
@@ -59,7 +68,8 @@ export const register: Register = (on, options) => {
     }
     await remember($, run)
     if (autoOpen) void $.ui.open({ id: PANE, title: 'DuckDB' })
-    return ran
+    if (parsed.tables.length === 0) return ran
+    return { ...ran, context: [...(ran.context ?? []), DRAWN_NOTE] }
   }).catch((_, e, next) => next(e))
 
   // The result block under a duckdb Bash row: the table, aligned, in place of
@@ -72,7 +82,7 @@ export const register: Register = (on, options) => {
     const width = Math.max(20, (e.viewport?.columns ?? 80) - 6)
     return (
       <Box flexDirection="column" paddingLeft={2}>
-        {drawRun({ Box, Text }, run, { width, maxRows: 15 })}
+        {drawRun({ Box, Text }, run, { width, maxRows: INLINE_ROWS })}
       </Box>
     )
   })
