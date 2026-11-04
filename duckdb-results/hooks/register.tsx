@@ -20,7 +20,7 @@ function text(value: unknown): string {
 
 export const register: Register = (on, options) => {
   const database = typeof options.database === 'string' ? options.database.trim() : ''
-  const autoOpen = options.autoOpenPane !== false
+  const autoOpen = options.autoOpenPane === true
 
   on('session.start', async ($, e, next) => {
     await $.command.register({
@@ -34,6 +34,8 @@ export const register: Register = (on, options) => {
   })
 
   // Every Bash call that runs the duckdb CLI: keep what agent mode printed.
+  // The table is drawn under the tool row; the pane only opens when asked for,
+  // since open it would show the same run a second time.
   on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
     const ran = await next(e)
     const command = text(e.command)

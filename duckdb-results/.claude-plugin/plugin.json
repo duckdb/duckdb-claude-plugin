@@ -1,6 +1,6 @@
 {
   "name": "duckdb-results",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Renders DuckDB CLI agent-mode results as aligned tables under the tool call and in a /duckdb pane, and runs SQL from /duckdb <sql>.",
   "author": {
     "name": "duckdb",
@@ -25,8 +25,8 @@
     },
     "autoOpenPane": {
       "type": "boolean",
-      "description": "Open the DuckDB pane when a duckdb command produces a result.",
-      "default": true,
+      "description": "Also open the DuckDB pane whenever a duckdb command produces a result. Off, the table appears only under the tool call, and /duckdb opens the pane.",
+      "default": false,
       "title": "Open the pane on results"
     }
   }
