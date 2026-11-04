@@ -13,6 +13,15 @@
       "homepage": "https://duckdb.org",
       "license": "MIT",
       "keywords": ["duckdb", "sql", "python", "parquet", "csv", "migration", "duckdb-2.0"]
+    },
+    {
+      "name": "duckdb-results",
+      "source": "./duckdb-results",
+      "description": "A mod that draws DuckDB CLI agent-mode results as aligned tables under the tool call and in a /duckdb pane, and runs SQL from /duckdb <sql>.",
+      "version": "0.1.0",
+      "homepage": "https://duckdb.org",
+      "license": "MIT",
+      "keywords": ["duckdb", "sql", "mod", "table", "agent-mode"]
     }
   ]
 }
