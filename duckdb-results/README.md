@@ -29,7 +29,7 @@ Both appear in `/config` under the plugin's name.
 | Setting | Default | Meaning |
 |---|---|---|
 | `database` | empty | Database file that `/duckdb <sql>` opens. Empty runs in memory. |
-| `autoOpenPane` | `true` | Open the pane the first time a `duckdb` command produces a result. Unasked, the terminal seats it from 144 columns. |
+| `autoOpenPane` | `false` | Also open the pane whenever a `duckdb` command produces a result. Off by default: the table is already under the tool call, and an open pane would show the same run twice. `/duckdb` opens the pane when you want the full result. |
 
 ## Requirements
 
