@@ -1,6 +1,6 @@
 {
   "name": "duckdb-results",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Renders DuckDB CLI agent-mode results as aligned tables under the tool call and in a /duckdb pane, and runs SQL from /duckdb <sql>.",
   "author": {
     "name": "duckdb",
