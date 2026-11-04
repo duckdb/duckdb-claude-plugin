@@ -23,13 +23,19 @@ export const register: Register = (on, options) => {
   const autoOpen = options.autoOpenPane === true
 
   on('session.start', async ($, e, next) => {
-    await $.command.register({
-      name: 'duckdb',
-      description: database
-        ? `Show DuckDB results in a pane, or run SQL against ${database}`
-        : 'Show DuckDB results in a pane, or run SQL in memory: /duckdb SELECT 42',
-      argumentHint: '[sql]',
-    })
+    // A host with no interactive session (a headless run, a remote host) has no
+    // command menu: the register call throws there, and the render hooks still run.
+    try {
+      await $.command.register({
+        name: 'duckdb',
+        description: database
+          ? `Show DuckDB results in a pane, or run SQL against ${database}`
+          : 'Show DuckDB results in a pane, or run SQL in memory: /duckdb SELECT 42',
+        argumentHint: '[sql]',
+      })
+    } catch (error) {
+      $.ui.log(`duckdb-results: /duckdb not registered: ${error instanceof Error ? error.message : String(error)}`, { to: 'debug' })
+    }
     return next(e)
   })
 
