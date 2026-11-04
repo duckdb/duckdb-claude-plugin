@@ -21,14 +21,28 @@ Claude whenever it writes DuckDB SQL or Python, and shows how to drive the CLI's
 The first two are background knowledge and do not appear in the `/` menu. The third can be
 invoked as `/duckdb-dialect:duckdb-upgrade`.
 
+## The `duckdb-results` mod
+
+[`duckdb-results/`](duckdb-results/) is a second plugin in this repository: a Claude Code
+[mod](https://code.claude.com/docs/en/plugins/mods/overview) that draws what agent mode prints.
+When Claude runs the `duckdb` CLI, the model reads the compact Markdown table, and you see the
+same result as an aligned table under the tool call: types dimmed under the names, numbers
+right-aligned, `NULL` dimmed, the omission marker and row count as a footer, errors with their
+type and position. `/duckdb` opens a pane with the last 20 results, and `/duckdb SELECT 42`
+runs SQL through the CLI without a Claude turn. Its [README](duckdb-results/README.md) has the
+details; `claude plugin test duckdb-results` runs its tests.
+
 ## Install
 
 ```
-/plugin marketplace add hannes/duckdb-claude-plugin
+/plugin marketplace add duckdb/duckdb-claude-plugin
 /plugin install duckdb-dialect@duckdb-dialect
+/plugin install duckdb-results@duckdb-dialect
 ```
 
-Or for one session while developing: `claude --plugin-dir /path/to/duckdb-dialect`.
+The first plugin is the knowledge, the second the table rendering; install either or both.
+For one session while developing: `claude --plugin-dir /path/to/duckdb-claude-plugin` loads the
+skills, `claude --plugin-dir /path/to/duckdb-claude-plugin/duckdb-results` the mod.
 
 ## Every example is tested
 
