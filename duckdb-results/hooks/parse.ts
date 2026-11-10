@@ -17,6 +17,8 @@ export function isDuckDBCommand(command: string): boolean {
 
 const ROW = /^\|.*\|$/
 const SEPARATOR = /^\|(?:-+\|)+$/
+const NOTE = /^(?:estimate|progress):/
+const BANNER = /^duckdb agent mode on:/
 const OMITTED = /^…\s*(\d+)\s+rows?\s+omitted\s*…$/
 const FOOTER = /^(?:first\s+\d+(?:\s+and\s+last\s+\d+)?\s+of\s+(at least\s+)?(\d+)\s+rows?|(\d+)\s+rows?)\b/
 
@@ -24,12 +26,38 @@ const FOOTER = /^(?:first\s+\d+(?:\s+and\s+last\s+\d+)?\s+of\s+(at least\s+)?(\d
  * Parses what the duckdb CLI prints in agent mode: compact markdown tables
  * with `name:TYPE` headers, an omission marker row, a footer with the row
  * count, and errors as JSON lines on stderr.
+ *
+ * A Bash tool call can hand over the two streams merged, so a `progress:` or
+ * `estimate:` line, the agent-mode banner or a JSON error may sit inside
+ * stdout, even between a table's header and its rows. Those lines are read as
+ * if they had come on stderr, and the table around them stays whole.
  */
 export function parseDuckDB(stdout: string, stderr: string): Parsed {
-  return {
-    tables: parseTables(stdout),
-    ...parseStderr(stderr),
+  const table: string[] = []
+  const stray: string[] = []
+  for (const line of stdout.split('\n')) {
+    if (isStderrLine(line.trim())) stray.push(line)
+    else table.push(line)
   }
+  const fromStdout = parseStderr(stray.join('\n'))
+  const fromStderr = parseStderr(stderr)
+  return {
+    tables: parseTables(table.join('\n')),
+    errors: [...fromStdout.errors, ...fromStderr.errors],
+    notes: lastProgress([...fromStdout.notes, ...fromStderr.notes]),
+  }
+}
+
+/** A line the CLI writes to stderr, found in stdout because the streams were merged. */
+function isStderrLine(line: string): boolean {
+  if (NOTE.test(line) || BANNER.test(line)) return true
+  return line.startsWith('{') && line.endsWith('}') && parseJsonError(line) !== null
+}
+
+/** A long query prints a progress line every few seconds; only the last one still says anything. */
+function lastProgress(notes: string[]): string[] {
+  const last = notes.map(note => note.startsWith('progress:')).lastIndexOf(true)
+  return notes.filter((note, index) => !note.startsWith('progress:') || index === last)
 }
 
 function parseTables(stdout: string): DuckDBTable[] {
@@ -89,7 +117,7 @@ function parseStderr(stderr: string): { errors: DuckDBError[]; notes: string[] }
         continue
       }
     }
-    if (/^(estimate|progress):/.test(line)) {
+    if (NOTE.test(line)) {
       notes.push(line)
       continue
     }

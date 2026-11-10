@@ -30,7 +30,7 @@ export type QueryRun = {
   at: number
   tables: DuckDBTable[]
   errors: DuckDBError[]
-  /** estimate: and progress: lines from stderr. */
+  /** estimate: and the last progress: line, from stderr or merged into stdout. */
   notes: string[]
 }
 
