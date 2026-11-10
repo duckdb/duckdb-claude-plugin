@@ -22,6 +22,20 @@ const EMPTY = `| x:BIGINT |
 0 rows, hash 0000000000000000
 `
 
+// A Bash tool call hands over stdout and stderr merged: the banner comes first, and
+// a long query's progress lines land between the header and the rows.
+const MERGED = `duckdb agent mode on: AI_AGENT is set and stdout is not a terminal; -no-agent turns it off, .help agent explains the output
+progress: 4% (elapsed 2.0s, remaining ~43.9s)
+| vessel_name:VARCHAR | vessels:BIGINT |
+|---|---|
+progress: 16% (elapsed 7.5s, remaining ~36.9s)
+progress: done (elapsed 11.1s)
+| FREEDOM | 120 |
+| SERENITY | 98 |
+| LIBERTY | 91 |
+25 rows, hash 735d43619b13fd7b
+`
+
 const BINDER = `{"exception_type":"Binder","exception_message":"Referenced column \\"foo\\" not found in FROM clause!\\nCandidate bindings: \\"range\\"","error_subtype":"COLUMN_NOT_FOUND","location":"[17,3]","position":"17","name":"foo"}`
 
 test('a small table keeps names, types and cells', () => {
@@ -67,6 +81,35 @@ test('two statements give two tables, and a JSON error is read', () => {
     },
   ])
   expect(parsed.notes).toEqual([])
+})
+
+test('progress lines merged into stdout do not cut the table short', () => {
+  const parsed = parseDuckDB(MERGED, '')
+  expect(parsed.tables.length).toBe(1)
+  const [table] = parsed.tables
+  expect(table?.columns.map(column => column.name)).toEqual(['vessel_name', 'vessels'])
+  expect(table?.rows).toEqual([
+    ['FREEDOM', '120'],
+    ['SERENITY', '98'],
+    ['LIBERTY', '91'],
+  ])
+  expect(table?.total).toBe(25)
+  expect(parsed.errors).toEqual([])
+  // The banner is dropped, and of the progress lines only the last is kept.
+  expect(parsed.notes).toEqual(['progress: done (elapsed 11.1s)'])
+})
+
+test('a JSON error merged into stdout is read as an error', () => {
+  const parsed = parseDuckDB(`${BINDER}\n${SMALL}`, '')
+  expect(parsed.tables.length).toBe(1)
+  expect(parsed.tables[0]?.rows).toEqual([['42', 'hi']])
+  expect(parsed.errors.length).toBe(1)
+  expect(parsed.errors[0]?.type).toBe('Binder')
+})
+
+test('on stderr too, only the last progress line is kept and estimates stay', () => {
+  const stderr = 'estimate: ~3091571000 rows read\nprogress: 4% (elapsed 2.0s)\nprogress: done (elapsed 11.1s)\n'
+  expect(parseDuckDB(SMALL, stderr).notes).toEqual(['estimate: ~3091571000 rows read', 'progress: done (elapsed 11.1s)'])
 })
 
 test('a name holding a colon splits at the last colon', () => {
